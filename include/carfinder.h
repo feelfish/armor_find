@@ -11,6 +11,8 @@ extern cv::Mat grayImg;
 extern cv::Mat bgrSplit[3];
 extern cv::Mat splitDiff;
 
+
+extern std::vector<cv::Point2f> armorRec;
 extern bool armorD;
 extern int armorX;
 extern int armorY; 
@@ -18,6 +20,9 @@ extern int armorS;
 
 extern const int imgWidth;
 extern const int imgHeight;
+
+extern double camPara[9];
+extern double distor[5];
 
 
 

@@ -13,7 +13,7 @@ using namespace std;
 using namespace cv;
 
 const bool findRed = true;
-
+std::vector<cv::Point2f> armorRec;
 bool armorD = false;
 int armorX = 0;
 int armorY = 0;
@@ -27,14 +27,31 @@ cv::Mat grayImg;
 cv::Mat bgrSplit[3];
 cv::Mat splitDiff;
 
+double camPara[9] = {932.162968, 0.000000,   658.663550,
+		     0.00000,    933.417581, 343.299587,
+		     0.00000,    0.00000,    1.0000};
 
+double distor[5] = {0.143583, -0.222515, -0.003117,0.001501,0.0000};
 
 int main(int argc, char **argv){ 
+
+vector<Point3f> obj_p;
+obj_p.push_back(cv::Point3f(0.0,   0.0,  0.0));
+obj_p.push_back(cv::Point3f(125,   0.0,  0.0));
+obj_p.push_back(cv::Point3f(125,   60,   0.0));
+obj_p.push_back(cv::Point3f(0.0,   60,   0.0));
+
+Mat camera_matrix = cv::Mat(3, 3, CV_64F, camPara);
+Mat dist_coeffs   = cv::Mat(5, 1, CV_64F, distor);
+
+Mat rvec = cv::Mat::ones(3,1,CV_64F);
+Mat tvec = cv::Mat::ones(3,1,CV_64F);
+
 
  ros::init(argc,argv,"armorfind_node");
  ros::NodeHandle nh;
  
- ros::Publisher armor_pub = nh.advertise<armor_find::armor_msg>("armor_info", 1000);
+ ros::Publisher armor_pub = nh.advertise<armor_find::armor_msg>("armor_info", 100);
  ros::Rate loop_rate(10);
  armor_find::armor_msg armorMsg;
 
@@ -51,7 +68,7 @@ cap.set(CV_CAP_PROP_FRAME_HEIGHT,imgHeight);
 
 
 while(ros::ok()){
-
+		
             cap>>imgSource;
             if(!imgSource.empty()){             
                 vector<KeyPoint> keyPoints;
@@ -91,14 +108,28 @@ while(ros::ok()){
             }
 
 	if(armorD){
+		cv::solvePnP(obj_p,armorRec, camera_matrix, dist_coeffs, rvec, tvec);
+		double enemy_dis = tvec.at<double>(2);//Z distance
+                double enemy_ang = rvec.at<double>(1);//Rotate around y axis
 		armorMsg.detected = true;
-		armorMsg.d = 90 * 524 / armorS;
-		armorMsg.x = (armorX - imgWidth/2) /524 * armorMsg.d ;//armor_->armor.center.x - 320;
-		armorMsg.y = (armorX - imgHeight/2)/524 * armorMsg.d ;//armor_->armor.center.y - 240;
+		armorMsg.d = enemy_dis;
+		armorMsg.x = (armorX - 658.663550) /932.162968 * armorMsg.d ;//armor_->armor.center.x - 320;
+		armorMsg.y = (armorX - 343.299587)/933.417581 * armorMsg.d ;//armor_->armor.center.y - 240;
 		
 	}
+	else{
+	    armorMsg.detected = false;
+	    armorMsg.d = 0;
+            armorMsg.x = 0;
+            armorMsg.y = 0;
+
+	}
+	armorD = false;
 	armor_pub.publish(armorMsg);
 	//ROS_INFO("%s","send armor info");
+	
+	
+	
 }
 
 //ros::spinOnce();

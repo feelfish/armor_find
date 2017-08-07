@@ -408,7 +408,11 @@ void findArmors(Mat& inputMat,vector<Rect> inRectList){
 		        armorX =(int)cCenter.x;
 			armorY =(int)cCenter.y; 
 			armorS = (int)cRect.height;
-
+			armorRec.clear();
+			armorRec.push_back(Point2f(inRectList[i].x,inRectList[i].y));
+			armorRec.push_back(Point2f(inRectList[i].x + inRectList[i].width,inRectList[i].y));
+			armorRec.push_back(Point2f(inRectList[i].x + inRectList[i].width,inRectList[i].y + inRectList[i].height));
+			armorRec.push_back(Point2f(inRectList[i].x,inRectList[i].y + inRectList[i].height));
                         //RotatedRect numRect = minAreaRect(pCircles[i]);
                         circle(imgSource,cCenter,cRadius,Scalar(0,255,0),2);
                         //drawRoRect(imgSource,numRect);
