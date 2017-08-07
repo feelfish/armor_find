@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "/home/ubuntu/auto_car/devel/include/armor_find/armor_msg.h"
+#include "armor_find/armor_msg.h"
 #include "std_msgs/String.h"
 #include <sstream>
 
