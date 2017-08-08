@@ -465,7 +465,7 @@ void findArmors(Mat& inputMat,vector<highRegion> hRegions){
                     double cLen = arcLength(pCircles[i],true);
                     double cArea = contourArea(pCircles[i],false);
                     if (cLen > (bigRect.width + bigRect.height)/2  && cArea > (bigRect.area()/6) &&
-                        cLen*cLen/cArea < 4.5 * CV_PI && cLen*cLen/cArea > 3.5 * CV_PI)
+                        cLen*cLen/cArea < 4.8 * CV_PI && cLen*cLen/cArea > 3.2 * CV_PI)
                     {
                         Point2f cCenter;
                         float cRadius;
@@ -568,9 +568,9 @@ void findLights(Mat& inputMat)
         for(int i = 0; i < lRectList.size(); ++i)
         {
             float wdRatio = lRectList[i].width * 1.0 / lRectList[i].height;
-            if (wdRatio < 0.1|| wdRatio > 2)
+            if (wdRatio < 0.12|| wdRatio > 1.5)
             {
-                if(wdRatio > 1){
+                if(wdRatio > 4){
                 //TODO
                 }
                 continue;
@@ -578,9 +578,9 @@ void findLights(Mat& inputMat)
             for (int j = i + 1; j < lRectList.size(); ++j)
             {
                 float wdRatio = lRectList[j].width * 1.0 / lRectList[j].height;
-                if (wdRatio < 0.1 || wdRatio > 2)
+                if (wdRatio < 0.12 || wdRatio > 1.5)
                 {
-                    if(wdRatio > 1){
+                    if(wdRatio > 4){
                     //TODO
                     }
                     continue;

@@ -2,6 +2,9 @@
 #include "armor_find/armor_msg.h"
 #include "std_msgs/String.h"
 #include <sstream>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <move_base_msgs/MoveBaseAction.h>
 
 #include <memory>
 #include <math.h>
@@ -11,6 +14,11 @@
 
 using namespace std;
 using namespace cv;
+
+double camPara[9] = {932.162968, 0.000000,   658.663550,
+		     0.00000,    933.417581, 343.299587,
+		     0.00000,    0.00000,    1.0000};
+ double distor[5] = {0.143583, -0.222515, -0.003117,0.001501,0.0000};
 
 const bool findRed = true;
 std::vector<cv::Point2f> armorRec;
@@ -22,16 +30,12 @@ int armorS = 0;
 const int imgWidth = 1280;
 const int imgHeight = 720;
 
-cv::Mat imgSource;
-cv::Mat grayImg;
+cv::Mat imgSource(imgWidth,imgHeight,CV_8UC3);
+cv::Mat grayImg(imgWidth,imgHeight,CV_8UC3);
 cv::Mat bgrSplit[3];
-cv::Mat splitDiff;
+cv::Mat splitDiff(imgWidth,imgHeight,CV_8UC3);
 
-double camPara[9] = {932.162968, 0.000000,   658.663550,
-		     0.00000,    933.417581, 343.299587,
-		     0.00000,    0.00000,    1.0000};
 
-double distor[5] = {0.143583, -0.222515, -0.003117,0.001501,0.0000};
 
 int main(int argc, char **argv){ 
 
@@ -52,8 +56,11 @@ Mat tvec = cv::Mat::ones(3,1,CV_64F);
  ros::NodeHandle nh;
  
  ros::Publisher armor_pub = nh.advertise<armor_find::armor_msg>("armor_info", 100);
+ ros::Publisher pub_goal = nh.advertise<move_base_msgs::MoveBaseGoal>("camera_goal", 10);
+
  ros::Rate loop_rate(10);
  armor_find::armor_msg armorMsg;
+ move_base_msgs::MoveBaseGoal goal_pose;
 
 string CamWindow = "CamWindow";
 namedWindow(CamWindow,WINDOW_AUTOSIZE);
@@ -66,6 +73,8 @@ cap.set(CV_CAP_PROP_FRAME_WIDTH,imgWidth);
 cap.set(CV_CAP_PROP_FRAME_HEIGHT,imgHeight);
 //cap.set(CV_CAP_PROP_BRIGHTNESS,0.45);
 
+double enemy_dis;//Z distance
+double enemy_ang;//Rotate around y axis
 
 while(ros::ok()){
 		
@@ -109,12 +118,25 @@ while(ros::ok()){
 
 	if(armorD){
 		cv::solvePnP(obj_p,armorRec, camera_matrix, dist_coeffs, rvec, tvec);
-		double enemy_dis = tvec.at<double>(2);//Z distance
-                double enemy_ang = rvec.at<double>(1);//Rotate around y axis
+		enemy_dis = tvec.at<double>(2);//Z distance
+                enemy_ang = rvec.at<double>(1);//Rotate around y axis
 		armorMsg.detected = true;
 		armorMsg.d = enemy_dis;
-		armorMsg.x = (armorX - 658.663550) /932.162968 * armorMsg.d ;//armor_->armor.center.x - 320;
-		armorMsg.y = (armorX - 343.299587)/933.417581 * armorMsg.d ;//armor_->armor.center.y - 240;
+		armorMsg.x = (armorX - camPara[2]) /camPara[0] * armorMsg.d ;
+		armorMsg.y = (armorX - camPara[5])/camPara[4] * armorMsg.d ;
+
+
+		goal_pose.target_pose.header.frame_id = "base_link";
+                goal_pose.target_pose.header.stamp = ros::Time::now();
+                goal_pose.target_pose.pose.position.x = enemy_dis;
+                goal_pose.target_pose.pose.position.y = 0;
+                goal_pose.target_pose.pose.position.z = 1;
+                //tf::Quaternion q;
+                //q.setRPY(0, 0, pan_yaw);
+                goal_pose.target_pose.pose.orientation.x= 0;
+                goal_pose.target_pose.pose.orientation.y= 0;
+                goal_pose.target_pose.pose.orientation.z= 0;
+                goal_pose.target_pose.pose.orientation.w= 1;
 		
 	}
 	else{
@@ -122,13 +144,14 @@ while(ros::ok()){
 	    armorMsg.d = 0;
             armorMsg.x = 0;
             armorMsg.y = 0;
+	    goal_pose.target_pose.pose.position.z = 0;
+	                
 
 	}
 	armorD = false;
 	armor_pub.publish(armorMsg);
+        pub_goal.publish(goal_pose);
 	//ROS_INFO("%s","send armor info");
-	
-	
 	
 }
 

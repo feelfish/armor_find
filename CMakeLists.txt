@@ -130,7 +130,7 @@ include_directories(
     )
 
 include_directories(
-     ./include
+     include
    
     )
 
@@ -218,7 +218,7 @@ include_directories(
 add_executable(armor_find 
       	       src/armorfind_node.cpp
 	       src/carfinder.cpp
-	       include/carfinder.h)
+	       )
 add_dependencies(armor_find ${catkin_EXPORTED_TARGETS})
 target_link_libraries(armor_find ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES})
 
